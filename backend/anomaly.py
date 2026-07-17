@@ -29,10 +29,12 @@ def _is_late(check_in: time) -> bool:
 
 def late_arrival_flags(db: Session) -> list[dict[str, Any]]:
     """
-    Flag staff who are late on >40% of their recorded shifts.
-    Also detect if lateness clusters on a specific weekday.
+    Flag staff who are:
+    1. Late on >40% of their recorded shifts overall, OR
+    2. Late 2+ times on the same specific weekday (weekday-clustered lateness pattern)
     """
     flags = []
+    weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     staff_list = db.query(Staff).all()
 
     for s in staff_list:
@@ -47,34 +49,46 @@ def late_arrival_flags(db: Session) -> list[dict[str, Any]]:
         late_records = [r for r in records if _is_late(r.check_in)]
         late_pct = len(late_records) / len(records)
 
-        if late_pct > 0.40:
-            # Check weekday clustering
-            weekday_counts: dict[int, int] = defaultdict(int)
-            for r in late_records:
-                weekday_counts[r.date.weekday()] += 1
+        # Count late by weekday
+        weekday_counts: dict[int, int] = defaultdict(int)
+        for r in late_records:
+            weekday_counts[r.date.weekday()] += 1
 
-            # A weekday is "clustered" if it accounts for >50% of late instances
-            weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            clustered_day = None
-            for wd, cnt in weekday_counts.items():
-                if cnt / len(late_records) >= 0.5:
-                    clustered_day = weekday_names[wd]
-                    break
+        # Determine if there's a dominant weekday cluster
+        clustered_day = None
+        for wd, cnt in weekday_counts.items():
+            if cnt >= 2:  # 2+ late instances on same weekday = pattern
+                clustered_day = weekday_names[wd]
+                break
+
+        # Flag if overall late rate >40% OR weekday-clustered pattern detected
+        should_flag = late_pct > 0.40 or clustered_day is not None
+
+        if should_flag and late_records:
+            severity = "red" if late_pct > 0.40 else "yellow"
+            if clustered_day:
+                cluster_count = weekday_counts[weekday_names.index(clustered_day)]
+                msg = (
+                    f"{s.name} was late on {len(late_records)} of {len(records)} shifts "
+                    f"({round(late_pct * 100)}%), clustering on {clustered_day}s "
+                    f"({cluster_count} of {len(late_records)} late occurrences)."
+                )
+            else:
+                msg = (
+                    f"{s.name} was late on {len(late_records)} of {len(records)} shifts "
+                    f"({round(late_pct * 100)}%)."
+                )
 
             flags.append({
                 "type": "late_arrival",
-                "severity": "red",
+                "severity": severity,
                 "staff_id": s.id,
                 "staff_name": s.name,
                 "late_count": len(late_records),
                 "total_shifts": len(records),
                 "late_pct": round(late_pct * 100, 1),
                 "clustered_weekday": clustered_day,
-                "message": (
-                    f"{s.name} was late on {len(late_records)} of {len(records)} shifts "
-                    f"({round(late_pct * 100)}%)"
-                    + (f", mostly on {clustered_day}s." if clustered_day else ".")
-                ),
+                "message": msg,
             })
 
     return flags

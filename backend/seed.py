@@ -73,10 +73,10 @@ def seed():
     # Fixed per-staff base check-in times — spaced 10+ minutes apart so
     # normal staff never accidentally land within the 2-min buddy-punch window.
     # Only Arun+Faisal are deliberately synchronised on buddy-punch days.
+    # All "normal" times are before 9:30 so they don't trigger late-arrival detection.
     PRIYA_BASE_MIN  = 15   # 9:15 normally, 10:05-10:20 on Mondays
-    ARUN_BASE_MIN   = 28   # 9:28 (buddy-punch day) or 9:00 (non-buddy day)
-    FAISAL_BASE_MIN = 28   # 9:28 (buddy-punch day) or 9:40 (non-buddy day)
-    DEEPA_BASE_MIN  = 50   # 9:50 — well separated from Arun/Faisal
+    ARUN_BASE_MIN   = 28   # 9:28 on buddy-punch days, 9:00 on normal days
+    DEEPA_BASE_MIN  = 20   # 9:20 — arrives after Priya, before expected 9:30
     ROHIT_BASE_MIN  = 5    # 9:05 — first in, well separated from everyone
 
     for (d, week_idx) in work_days:
@@ -100,15 +100,15 @@ def seed():
             co_f = time(18, 10)
         else:
             ci_a = time(9, 0 + day_var)          # 9:00-9:04 on non-buddy days
-            ci_f = time(9, 40 + day_var)         # 9:40-9:44 — 40 min apart, no overlap
+            ci_f = time(9, 10 + day_var)         # 9:10-9:14 — 10 min after Arun, before 9:30
             co_a = time(18, 0)
-            co_f = time(18, 45)
+            co_f = time(18, 15)
         records.append(Attendance(staff=arun,   date=d, check_in=ci_a, check_out=co_a))
         records.append(Attendance(staff=faisal, date=d, check_in=ci_f, check_out=co_f))
 
         # ---- DEEPA: absent on Fridays (3 Fridays = 3 missed shifts on same weekday) ----
         if dow != 4:
-            ci = time(9, DEEPA_BASE_MIN + day_var)  # 9:50–9:54 — far from others
+            ci = time(9, DEEPA_BASE_MIN + day_var)  # 9:20–9:24 — before 9:30, well separated
             co = time(17, 55 + day_var)
             records.append(Attendance(staff=deepa, date=d, check_in=ci, check_out=co))
 
