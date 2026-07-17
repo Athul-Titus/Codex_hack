@@ -30,7 +30,7 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={to === '/'}
-            className={({ isActive }) => isActive ? 'nav-item-active' : 'nav-item'}
+            className={({ isActive }: { isActive: boolean }) => isActive ? 'nav-item-active' : 'nav-item'}
           >
             <Icon size={16} />
             <span>{label}</span>

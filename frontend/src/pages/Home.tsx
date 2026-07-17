@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import { Users, Sparkles, Calendar, AlertTriangle, ArrowRight, TrendingUp } from 'lucide-react'
 import AnimatedPage from '../components/AnimatedPage'
 
@@ -10,12 +10,12 @@ interface FlagSummary {
   yellow: number
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.35, ease: 'easeOut' },
+    transition: { delay: i * 0.1, duration: 0.35, ease: 'easeOut' as const },
   }),
 }
 

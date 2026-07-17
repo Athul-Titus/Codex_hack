@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Instagram, Linkedin, Zap, Copy, CheckCheck, Loader2 } from 'lucide-react'
+import { Sparkles, Image, Briefcase, Zap, Copy, CheckCheck, Loader2 } from 'lucide-react'
 import AnimatedPage from '../components/AnimatedPage'
 
 // ---------- Mock data ----------
@@ -171,14 +171,14 @@ export default function ContentSpark() {
               </p>
 
               <OutputCard
-                icon={Instagram}
+                icon={Image}
                 label="Instagram Caption"
                 content={result.instagram}
                 iconColor="text-pink-400"
                 delay={0.05}
               />
               <OutputCard
-                icon={Linkedin}
+                icon={Briefcase}
                 label="LinkedIn Post"
                 content={result.linkedin}
                 iconColor="text-blue-400"
