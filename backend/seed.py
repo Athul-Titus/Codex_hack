@@ -114,11 +114,11 @@ def seed():
     db.commit()
     db.close()
 
-    print(f"✅ Seeded {len(staff_names)} staff and {len(records)} attendance records.")
+    print(f"[OK] Seeded {len(staff_names)} staff and {len(records)} attendance records.")
     print("   Anomaly patterns:")
-    print("   • Priya Menon  — late every Monday (check-in ~10:05–10:20)")
-    print("   • Arun + Faisal — synchronised check-ins on Mon/Wed/Fri (buddy-punch signal)")
-    print("   • Deepa Nair   — absent all 3 Fridays (missed-shift clustering)")
+    print("   - Priya Menon  : late every Monday (check-in ~10:05-10:20)")
+    print("   - Arun + Faisal: synchronised check-ins on Mon/Wed/Fri (buddy-punch signal)")
+    print("   - Deepa Nair   : absent all 3 Fridays (missed-shift clustering)")
 
 
 if __name__ == "__main__":
