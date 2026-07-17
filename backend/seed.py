@@ -58,54 +58,63 @@ def seed():
         for d in range(6):  # Mon–Sat
             work_days.append((monday + timedelta(days=d), w))
 
-    # Helper: standard check-in/out with small random-ish variance
+    # Helper: standard check-in/out with wider per-staff variance
+    # Each staff member gets a different offset so they spread 5–20 min apart,
+    # ensuring no accidental 2-minute proximity that would trigger buddy-punch detection.
     def normal(day_offset: int = 0) -> tuple[time, time]:
         h_in = 9
-        m_in = 25 + (day_offset % 7)   # 9:25–9:31
+        m_in = 10 + (day_offset % 20)   # 9:10–9:29 spread across staff
         h_out = 18
-        m_out = 0 + (day_offset % 15)  # 18:00–18:14
+        m_out = 5 + (day_offset % 20)   # 18:05–18:24
         return time(h_in, m_in), time(h_out, m_out)
 
     records = []
 
+    # Fixed per-staff base check-in times — spaced 10+ minutes apart so
+    # normal staff never accidentally land within the 2-min buddy-punch window.
+    # Only Arun+Faisal are deliberately synchronised on buddy-punch days.
+    PRIYA_BASE_MIN  = 15   # 9:15 normally, 10:05-10:20 on Mondays
+    ARUN_BASE_MIN   = 28   # 9:28 (buddy-punch day) or 9:00 (non-buddy day)
+    FAISAL_BASE_MIN = 28   # 9:28 (buddy-punch day) or 9:40 (non-buddy day)
+    DEEPA_BASE_MIN  = 50   # 9:50 — well separated from Arun/Faisal
+    ROHIT_BASE_MIN  = 5    # 9:05 — first in, well separated from everyone
+
     for (d, week_idx) in work_days:
         dow = d.weekday()  # 0=Mon, 4=Fri, 5=Sat
-        day_seed = d.toordinal()
+        day_var = d.toordinal() % 5  # 0–4, adds tiny day-to-day variance
 
         # ---- PRIYA: late on Mondays (check_in 10:05–10:20) ----
         if dow == 0:
-            # Late most Mondays — always late for demo purposes
             ci = time(10, 5 + (week_idx * 5))
             co = time(18, 30)
-            records.append(Attendance(staff=priya, date=d, check_in=ci, check_out=co))
         else:
-            ci, co = normal(day_seed)
-            records.append(Attendance(staff=priya, date=d, check_in=ci, check_out=co))
+            ci = time(9, PRIYA_BASE_MIN + day_var)
+            co = time(18, 20 + day_var)
+        records.append(Attendance(staff=priya, date=d, check_in=ci, check_out=co))
 
-        # ---- ARUN + FAISAL: buddy-punch on Mon/Wed/Fri (check-ins within 60s) ----
+        # ---- ARUN + FAISAL: buddy-punch on Mon/Wed/Fri (check-ins same minute) ----
         if dow in (0, 2, 4):
-            # Synchronised check-in: same minute, arun 0s faisal +45s (both round to same minute)
-            ci_a = time(9, 28)
-            ci_f = time(9, 28)  # same minute — within 60s
+            ci_a = time(9, ARUN_BASE_MIN)
+            ci_f = time(9, ARUN_BASE_MIN)        # same minute — within 60s of Arun
             co_a = time(18, 5)
             co_f = time(18, 10)
-            records.append(Attendance(staff=arun, date=d, check_in=ci_a, check_out=co_a))
-            records.append(Attendance(staff=faisal, date=d, check_in=ci_f, check_out=co_f))
         else:
-            ci_a, co_a = normal(day_seed + 1)
-            ci_f, co_f = normal(day_seed + 3)
-            records.append(Attendance(staff=arun, date=d, check_in=ci_a, check_out=co_a))
-            records.append(Attendance(staff=faisal, date=d, check_in=ci_f, check_out=co_f))
+            ci_a = time(9, 0 + day_var)          # 9:00-9:04 on non-buddy days
+            ci_f = time(9, 40 + day_var)         # 9:40-9:44 — 40 min apart, no overlap
+            co_a = time(18, 0)
+            co_f = time(18, 45)
+        records.append(Attendance(staff=arun,   date=d, check_in=ci_a, check_out=co_a))
+        records.append(Attendance(staff=faisal, date=d, check_in=ci_f, check_out=co_f))
 
         # ---- DEEPA: absent on Fridays (3 Fridays = 3 missed shifts on same weekday) ----
-        if dow == 4:
-            pass  # No attendance record = missed shift
-        else:
-            ci, co = normal(day_seed + 2)
+        if dow != 4:
+            ci = time(9, DEEPA_BASE_MIN + day_var)  # 9:50–9:54 — far from others
+            co = time(17, 55 + day_var)
             records.append(Attendance(staff=deepa, date=d, check_in=ci, check_out=co))
 
         # ---- ROHIT: normal attendance throughout ----
-        ci, co = normal(day_seed + 4)
+        ci = time(9, ROHIT_BASE_MIN + day_var)   # 9:05–9:09 — first in, far from others
+        co = time(18, 10 + day_var)
         records.append(Attendance(staff=rohit, date=d, check_in=ci, check_out=co))
 
     for r in records:
