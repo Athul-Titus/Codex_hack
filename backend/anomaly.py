@@ -171,11 +171,12 @@ def missed_shift_flags(db: Session) -> list[dict[str, Any]]:
 
     # Build set of expected work days (Mon–Sat)
     expected_days: set = set()
+    from datetime import timedelta as _td
     cur = min_date
     while cur <= max_date:
         if cur.weekday() < 6:  # 0–5 = Mon–Sat
             expected_days.add(cur)
-        cur += cur.replace(day=cur.day + 1) - cur  # increment by 1 day
+        cur = cur + _td(days=1)
 
     staff_list = db.query(Staff).all()
     weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
